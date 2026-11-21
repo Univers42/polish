@@ -27,24 +27,21 @@
    normal file open and gets "No such file or directory", exactly as bash
    leaves it.
 
-   The service goes to getaddrinfo as a string, so names work as well as
-   numbers ("/dev/tcp/host/http"), again matching bash. A resolver failure
-   sets EINVAL because the caller's error path prints strerror(errno), and
-   EINVAL is what bash ends up reporting for the same input. */
+   Platform networking details (socket, connect, getaddrinfo) are abstracted
+   behind the PAL layer pal_net_connect(). */
 
 #include "expander_private.h"
-#include <sys/socket.h>
-#include <netdb.h>
+#include "pal.h"
 
-/* SOCK_STREAM for /dev/tcp/, SOCK_DGRAM for /dev/udp/, -1 for anything
+/* PAL_NET_TCP for /dev/tcp/, PAL_NET_UDP for /dev/udp/, -1 for anything
    else.  Only the prefix is judged here; whether the rest is well formed
    is net_redir_open's problem. */
-static int	net_socktype(const char *fname)
+static int	net_proto(const char *fname)
 {
 	if (ft_strncmp(fname, "/dev/tcp/", 9) == 0)
-		return (SOCK_STREAM);
+		return (PAL_NET_TCP);
 	if (ft_strncmp(fname, "/dev/udp/", 9) == 0)
-		return (SOCK_DGRAM);
+		return (PAL_NET_UDP);
 	return (-1);
 }
 
@@ -66,35 +63,6 @@ static const char	*net_split(const char *rest, char *buf, size_t n)
 	return (rest + len + 1);
 }
 
-/* Resolve and connect.  getaddrinfo can hand back several addresses (a
-   host with both A and AAAA records, say); we try each in turn and keep
-   the first that connects, which is what makes "localhost" work on a box
-   where ::1 is listening and 127.0.0.1 is not, or the reverse. */
-static int	net_connect(const char *host, const char *serv, int socktype)
-{
-	struct addrinfo		hints;
-	struct addrinfo		*list;
-	struct addrinfo		*ai;
-	int					fd;
-
-	ft_memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = socktype;
-	if (getaddrinfo(host, serv, &hints, &list) != 0)
-		return (errno = EINVAL, -1);
-	ai = list;
-	while (ai)
-	{
-		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (fd >= 0 && connect(fd, ai->ai_addr, ai->ai_addrlen) == 0)
-			return (freeaddrinfo(list), fd);
-		if (fd >= 0)
-			close(fd);
-		ai = ai->ai_next;
-	}
-	return (freeaddrinfo(list), -1);
-}
-
 /* -1 = not a network path, leave it to the file open; 0 = it was one and
    it failed (errno is set, and the caller prints strerror for it); 1 = a
    connected socket is in ret->fd.
@@ -107,15 +75,15 @@ int	net_redir_open(char *fname, t_redir *ret)
 {
 	char			host[256];
 	const char		*serv;
-	int				socktype;
+	int				proto;
 
-	socktype = net_socktype(fname);
-	if (socktype < 0)
+	proto = net_proto(fname);
+	if (proto < 0)
 		return (-1);
 	serv = net_split(fname + 9, host, sizeof(host));
 	if (!serv)
 		return (-1);
-	ret->fd = net_connect(host, serv, socktype);
+	ret->fd = pal_net_connect(host, serv, proto);
 	if (ret->fd < 0)
 		return (0);
 	if (!redir_park_fd(ret))
