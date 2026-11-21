@@ -71,12 +71,12 @@ static void	tip_write(const char *path, const char *tip)
 		return ;
 	ft_strlcpy(dir, home, sizeof(dir));
 	ft_strlcat(dir, "/.cache", sizeof(dir));
-	mkdir(dir, 0755);
+	mkdir(dir, 0700);
 	ft_strlcat(dir, "/hellish", sizeof(dir));
-	mkdir(dir, 0755);
+	mkdir(dir, 0700);
 	ft_strlcpy(tmp, path, sizeof(tmp));
 	ft_strlcat(tmp, ".tmp", sizeof(tmp));
-	fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	if (fd < 0)
 		return ;
 	if (write(fd, tip, ft_strlen(tip)) < 0)
