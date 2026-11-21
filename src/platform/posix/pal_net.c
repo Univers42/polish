@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "shell.h"
 #include "pal.h"
 #include "libft.h"
 #include <sys/socket.h>
