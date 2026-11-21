@@ -26,9 +26,15 @@
 int	update_download(const char *url, const char *dest, long min)
 {
 	char		out[64];
-	char *const	argv[] = {"curl", "-fsSL", "--proto", "=https,http",
-		"--max-time", "60", "-o", (char *)dest, (char *)url, NULL};
+	const char	*proto;
 	struct stat	st;
+
+	proto = "=https";
+	if (ft_strncmp(url, "http://127.0.0.1", 16) == 0
+		|| ft_strncmp(url, "http://localhost", 16) == 0)
+		proto = "=http";
+	char *const	argv[] = {"curl", "-fsSL", "--proto", (char *)proto,
+		"--max-time", "60", "-o", (char *)dest, (char *)url, NULL};
 
 	if (update_capture(argv, out, sizeof(out)) < 0)
 		return (0);
