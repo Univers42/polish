@@ -136,8 +136,12 @@ ask() {
 }
 
 fetch() { # fetch URL DEST -> 0/1
+	case "$1" in
+	http://127.0.0.1*|http://localhost*) _proto="=http" ;;
+	*) _proto="=https" ;;
+	esac
 	if command -v curl >/dev/null 2>&1; then
-		curl -fsSL "$1" -o "$2"
+		curl --proto "$_proto" -fsSL "$1" -o "$2"
 	elif command -v wget >/dev/null 2>&1; then
 		wget -q -O "$2" "$1"
 	else
@@ -243,15 +247,14 @@ if [ -z "$BIN" ]; then
 		fi
 	done
 	[ -n "$_got" ] || die "download failed: $DL/$ASSET (and $LEGACY_ASSET)"
-	if fetch "$DL/$_got.sha256" "$WORK/shell.bin.sha256" 2>/dev/null \
-		&& command -v sha256sum >/dev/null 2>&1; then
-		( cd "$WORK" && sed "s/ .*/  shell.bin/" shell.bin.sha256 \
-			| sha256sum -c - >/dev/null 2>&1 ) \
-			|| die "sha256 verification FAILED -- refusing to install"
-		say "sha256 verified ($_got)"
-	else
-		warn "could not verify the checksum (missing .sha256 or sha256sum)"
-	fi
+	command -v sha256sum >/dev/null 2>&1 \
+		|| die "sha256sum is required to verify the release -- refusing to install"
+	fetch "$DL/$_got.sha256" "$WORK/shell.bin.sha256" 2>/dev/null \
+		|| die "could not fetch .sha256 checksum file -- refusing to install"
+	( cd "$WORK" && sed "s/ .*/  shell.bin/" shell.bin.sha256 \
+		| sha256sum -c - >/dev/null 2>&1 ) \
+		|| die "sha256 verification FAILED -- refusing to install"
+	say "sha256 verified ($_got)"
 	chmod +x "$WORK/shell.bin"
 	BIN="$WORK/shell.bin"
 fi

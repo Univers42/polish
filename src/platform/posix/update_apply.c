@@ -132,11 +132,8 @@ int	update_apply(const char *tag, const char *target, int sudo)
 	if (!update_download(url, tmp, 1024))
 		return (unlink(tmp), 2);
 	sha = update_verify_sha(tag, asset, tmp);
-	if (sha == 0)
+	if (sha <= 0)
 		return (unlink(tmp), 3);
-	if (sha < 0)
-		ft_eprintf("polish: this release publishes no checksum — "
-			"verifying by running the binary instead\n");
 	chmod(tmp, 0755);
 	if (!validate_binary(tmp, tag))
 		return (unlink(tmp), 4);
