@@ -47,7 +47,10 @@ class Publisher:
     def __init__(self, tag, payload, sha_override=None, hang=False):
         self.tag = tag
         self.payload = payload
-        self.sha = sha_override or hashlib.sha256(payload).hexdigest()
+        if sha_override == "NONE":
+            self.sha = None
+        else:
+            self.sha = sha_override or hashlib.sha256(payload).hexdigest()
         self.hang = hang
         self.asset = "polish-linux-" + os.uname().machine
         pub = self
@@ -64,6 +67,9 @@ class Publisher:
                     body = ('{"tag_name": "v%s", "name": "r"}'
                             % pub.tag).encode()
                 elif self.path.endswith(".sha256"):
+                    if pub.sha is None:
+                        self.send_error(404)
+                        return
                     body = ("%s  %s\n" % (pub.sha, pub.asset)).encode()
                 elif self.path.endswith(pub.asset):
                     body = pub.payload
@@ -198,6 +204,15 @@ def main():
     check("bad checksum is rejected", rc != 0 and "checksum" in out,
           repr(out[:300]))
     check("bad checksum leaves the binary untouched",
+          open(binary, "rb").read() == before)
+    pub.stop()
+
+    # 7b -- the release publishes no checksum at all (fails closed).
+    pub = Publisher(higher, payload, sha_override="NONE")
+    rc, out = run(binary, pub.env(home), ["-c", "update --now"])
+    check("missing checksum is rejected", rc != 0 and "checksum" in out,
+          repr(out[:300]))
+    check("missing checksum leaves the binary untouched",
           open(binary, "rb").read() == before)
     pub.stop()
 
