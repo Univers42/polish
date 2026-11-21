@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   pal_net.c                                          :+:      :+:    :+:   */
+/*   test_pal_net.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -18,27 +18,11 @@
 #include <unistd.h>
 #include <errno.h>
 
-/* Resolve and connect to host:serv.
-   proto: PAL_NET_TCP (SOCK_STREAM) or PAL_NET_UDP (SOCK_DGRAM).
-   Tries each resolved address in turn and returns the first connected
-   descriptor, matching bash /dev/tcp and /dev/udp behavior. */
-int	pal_net_connect(const char *host, const char *serv, int proto)
+static int	try_connect_ai(struct addrinfo *list)
 {
-	struct addrinfo		hints;
-	struct addrinfo		*list;
 	struct addrinfo		*ai;
-	int					socktype;
 	int					fd;
 
-	if (proto == PAL_NET_UDP)
-		socktype = SOCK_DGRAM;
-	else
-		socktype = SOCK_STREAM;
-	ft_memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = socktype;
-	if (getaddrinfo(host, serv, &hints, &list) != 0)
-		return (errno = EINVAL, -1);
 	ai = list;
 	while (ai)
 	{
@@ -50,4 +34,21 @@ int	pal_net_connect(const char *host, const char *serv, int proto)
 		ai = ai->ai_next;
 	}
 	return (freeaddrinfo(list), -1);
+}
+
+int	pal_net_connect(const char *host, const char *serv, int proto)
+{
+	struct addrinfo		hints;
+	struct addrinfo		*list;
+	int					socktype;
+
+	socktype = SOCK_STREAM;
+	if (proto == PAL_NET_UDP)
+		socktype = SOCK_DGRAM;
+	ft_memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = socktype;
+	if (getaddrinfo(host, serv, &hints, &list) != 0)
+		return (errno = EINVAL, -1);
+	return (try_connect_ai(list));
 }
