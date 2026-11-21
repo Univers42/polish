@@ -449,6 +449,8 @@ typedef struct s_shell
 	bool				opt_verbose; /* -v: print input lines as read */
 	bool				opt_pipefail; /* pipefail: status = last failure */
 	bool				opt_posix; /* --posix / set -o posix: no extensions */
+	bool				opt_ai; /* set -o ai: AI assist toggle */
+	char				*ai_model; /* `ai model`: active LLM id, NULL=default */
 	uint32_t			setopt; /* e_setopt bitset: the rest of `set -o` */
 	unsigned int		shopt; /* shopt -s bitset (SHOPT_* in shell.h) */
 	bool				opt_interactive; /* -i: force $- to carry 'i' */
