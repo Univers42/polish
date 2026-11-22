@@ -13,7 +13,6 @@
 #include "ai.h"
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/sysinfo.h>
 
 /* 1 when the machine is already busy (1-min loadavg >= 3/4 of the cores):
    background AI work (tip refresh) must not pile an inference burst on top of
@@ -25,6 +24,7 @@ int	ai_load_high(void)
 	char	buf[32];
 	int		fd;
 	ssize_t	r;
+	long	cores;
 
 	fd = open("/proc/loadavg", O_RDONLY);
 	if (fd < 0)
@@ -34,5 +34,8 @@ int	ai_load_high(void)
 	if (r <= 0)
 		return (0);
 	buf[r] = '\0';
-	return (ft_atoi(buf) >= (get_nprocs() * 3) / 4);
+	cores = sysconf(_SC_NPROCESSORS_ONLN);
+	if (cores < 1)
+		cores = 1;
+	return (ft_atoi(buf) >= (cores * 3) / 4);
 }
