@@ -5,6 +5,7 @@
 ![shell](https://img.shields.io/badge/shell-POSIX%20%2B%20bashisms-e2543a)
 ![golden suite](https://img.shields.io/badge/golden%20suite-4248%20vs%20bash%20--posix-6f9e78)
 ![license](https://img.shields.io/badge/license-MIT-7f8fa0)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Univers42/polish/badge)](https://scorecard.dev/viewer/?uri=github.com/Univers42/polish)
 
 ## Description
 

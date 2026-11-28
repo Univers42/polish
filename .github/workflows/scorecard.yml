@@ -1,0 +1,45 @@
+name: scorecard
+
+# OpenSSF Scorecard (https://scorecard.dev): scores the repository's public
+# security posture and publishes the result, which the README badge reads.
+# It runs on the default branch only (the published result must come from
+# there), weekly, and on branch-protection changes. The SARIF file also goes
+# to the Security tab (Code scanning).
+on:
+  branch_protection_rule:
+  schedule:
+    - cron: '23 4 * * 1'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only by default; the job asks for what it needs.
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      security-events: write # upload the SARIF results to code scanning
+      id-token: write        # publish the result to scorecard.dev (needed for the badge)
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 5
+      - uses: github/codeql-action/upload-sarif@74c1aea9df7c0f02e9b7bfe4a8935abf2e5e3aa6 # v3
+        with:
+          sarif_file: results.sarif
